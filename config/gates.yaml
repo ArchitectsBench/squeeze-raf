@@ -1,0 +1,166 @@
+# config/gates.yaml
+# Pre-registered gate thresholds. LOCK THESE BEFORE RUNNING.
+# Do NOT edit a threshold to make a strategy pass — that is goal-hacking (see risks.md R8).
+# Detail and rationale: docs/BUILD_SPEC.md §5 and §12.
+
+holdout:
+  locked: true                 # OOS window is not to be read/tuned until the graduation gate (P6)
+  oos_window_months: 6         # most-recent slice held out of all optimization
+  total_history_years: 2       # trailing window the Sharpe target is measured over
+
+# Stage 1 — edge-check BEFORE optimization (event study on Confluence v0, default params)
+edge_check:
+  min_hit_rate: 0.53
+  min_fwd_return_t_stat: 2.0
+  fwd_return_must_exceed_cost_by_bps: 5     # mean forward return minus round-trip cost
+  require_monotonic_conviction: true        # higher conviction score → higher forward return
+  forward_horizons_bars: [1, 4, 8, 16, 40]  # also evaluate +1..+5 day equivalents
+  compare_to_random_baseline: true
+
+# Stage 3 — optimization hygiene
+optimization:
+  method: ["coarse_grid", "optuna"]
+  walk_forward: true
+  walk_forward_type: anchored
+  min_trades_per_free_parameter: 30
+  prefer_plateau_over_peak: true
+
+# Stage 4 — graduation gate (ALL must pass)
+graduation:
+  oos_sharpe_min: 1.2                # trailing 2y, out-of-sample
+  pbo_max: 0.20                      # Probability of Backtest Overfitting (CSCV / pypbo)
+  deflated_sharpe_significant: true  # Sharpe significant AFTER correcting for N trials + skew/kurtosis
+  bootstrap_sharpe_5th_pct_min: 0.5  # 5th percentile of bootstrapped Sharpe distribution
+  bootstrap_sharpe_median_min: 1.2
+  permutation_percentile_min: 95     # real Sharpe must beat 95th pct of the null
+  require_subperiod_stability: true  # edge persists across years + vol regimes
+  require_neighborhood_robustness: true
+
+# Validation run controls
+monte_carlo:
+  n_candidates_to_test: 20           # top 10–20 from optimization enter the gauntlet
+  bootstrap_iterations: 5000
+  permutation_iterations: 1000
+  block_bootstrap: true              # preserve autocorrelation
+  random_seed: 42                    # deterministic
+
+# Confluence-score backtest (PRE-REGISTERED 2026-07-02, BEFORE first run) —
+# does multi-timeframe confluence lift the daily EW-squeeze setup win-rate?
+# Test: daily EW-grade setups; confluence = # of multiday TFs (2d/3d/4d/1w) with a
+# tier-grade cell (screener_core.tier != None) in the SAME direction, as-of setup date.
+# (Intraday TFs excluded — only ~50d history exists; live conf includes them. Caveat.)
+confluence_backtest:
+  primary_horizon_days: 10
+  h1_win_rate_lift_pts_min: 3.0      # conf>=1 bucket must beat conf==0 by >= 3 win-pts
+  h1_diff_tstat_min: 2.0             # two-sample t on mean fwd-return difference
+  on_pass: "confluence keeps its screener ranking role"
+  on_fail: "confluence demoted to display-only; rank by verdict alone"
+  secondary_descriptive: [monotonicity_0_1_2plus, 20d_horizon, alert_only_subset]
+
+# Hold-horizon sweep (PRE-REGISTERED 2026-07-02, BEFORE first run) —
+# where does the daily EW-squeeze edge decay? Informs the DEFAULT hold_days for
+# discretionary squeeze trades (not a graduation; the signal remains non-graduated).
+# Sample: same daily EW-grade setups as confluence_backtest. Dir-adjusted fwd returns.
+hold_horizon_sweep:
+  horizons_days: [3, 5, 7, 10, 15, 20]
+  # incremental window h_{k-1}->h_k mean return must be positive with t >= 1.0 for the
+  # hold to extend through it; recommended hold = last qualifying horizon, and its
+  # CUMULATIVE t must be >= 2.0. Plateau check: neighbors of the pick within 30% of
+  # its per-day edge, else flag knife-edge and keep current defaults.
+  incremental_tstat_min: 1.0
+  cumulative_tstat_min: 2.0
+  plateau_neighbor_frac: 0.30
+  on_result: "set discretionary squeeze default hold_days; document in decisions.md"
+
+# Earnings-proximity filter (PRE-REGISTERED 2026-07-03, BEFORE first run) —
+# do daily EW-squeeze setups taken shortly BEFORE earnings underperform?
+# Sample: same daily EW-grade setups; earnings dates from data/earnings_dates.json
+# (~quarterly, coverage imperfect -> missing dates dilute the CONTROL bucket, which
+# biases AGAINST finding the effect; acceptable, caveat it).
+earnings_proximity:
+  primary_horizon_days: 10
+  pre_earnings_window_days: 10        # setup with next earnings 1..10 calendar days ahead
+  trigger_win_rate_gap_pts: 3.0       # pre-earnings bucket must LAG control by >= 3 pts
+  trigger_diff_tstat: -2.0            # Welch t (pre minus control) <= -2.0
+  on_trigger: "flag/down-rank pre-earnings setups in screener (like opposed news)"
+  on_no_trigger: "no change; register the result"
+  secondary_descriptive: [within_5d, 6_10d, post_earnings_0_5d_after, 3d_horizon]
+
+# Alert-push rule test: tier vs tape-support (PRE-REGISTERED 2026-07-03, BEFORE run) —
+# HYPOTHESIS IS DATA-DERIVED (hold-horizon side finding: ALERT-only negative at all
+# horizons) so this is confirmation-grade evidence at best, weaker than an
+# independently-motivated test. Mitigation: the gate compares the DISJOINT
+# disagreement region of the two push rules, not the finding that generated it.
+#   current rule: push tier==ALERT (AVOID-verdict suppressed)
+#   candidate:    push tape-supported setups ANY tier (AVOID suppressed)
+# Buckets (disjoint): A = WATCH + tape_support>0 (candidate-only pushes)
+#                     B = ALERT + tape_support<=0 (current-only pushes)
+alert_push_rule:
+  primary_horizon_days: 10
+  trigger_win_rate_gap_pts: 3.0     # win%(A) - win%(B) >= 3.0
+  trigger_diff_tstat: 2.0           # Welch t(A-B) >= 2.0
+  on_trigger: "ntfy push rule -> tape-supported (ALERT or WATCH), AVOID still suppressed; tier becomes display-only in the push"
+  on_no_trigger: "keep current ALERT-tier push rule"
+  secondary_descriptive: [full_2x2_tier_x_tape, 3d_horizon, strong_support_10]
+
+# GEX squeeze backtest (PRE-REGISTERED 2026-07-04, BEFORE first run) — validates the
+# live dealer-gamma overlay (docs/gex_backtest_spec.md). Data: local ORATS archive w/
+# real historical OI, window 2025-01..2026-06. Primary horizon 10d (DEVIATION from the
+# spec's 15d, chosen pre-run for consistency with every other gate; 3d & 15d reported
+# descriptively). Win-gap significance via two-proportion bootstrap (5000 iters, seed 42).
+gex_backtest:
+  primary_horizon_days: 10
+  h1_win_gap_pts_min: 5.0          # NEG-gamma setups minus POS-gamma setups, win-rate pts
+  h1_bootstrap_p_max: 0.05
+  h1_on_pass: "keep the verdict ±8 GEX factor; document effect size"
+  h1_on_fail: "REMOVE the ±8 from decision.verdict; keep walls as display levels only"
+  h2_up_wall_headroom_pct: 2.0     # UP setups: call-wall >= 2% above spot (room) vs 0..2% (pinned)
+  h2_win_gap_pts_min: 5.0          # room minus pinned
+  h2_bootstrap_p_max: 0.05
+  h2_on_fail: "REMOVE the -6 wall-just-ahead penalty from decision.verdict"
+
+# Tier re-weight test (PRE-REGISTERED 2026-07-04, BEFORE run) — is the ALERT +15
+# conviction bonus justified? Three prior looks say ALERT underperforms. Candidates
+# evaluated on the tape-window setup sample with the LIVE verdict formula (tape*0.6 +
+# tier + news[<=6d window, where available] -> GO>=65/AVOID<45), only the ALERT bonus
+# varying. ONE free parameter, 3 candidates, ~4k setups (>>30 trades/param).
+tier_weight_test:
+  primary_horizon_days: 10
+  candidates_alert_bonus: [15, 4, 0]   # current / parity-with-WATCH / no-tier-credit
+  selection: "highest GO-bucket 10d win%, subject to GO n >= 200; ties -> keep current"
+  adopt_requires_go_win_gain_pts: 0.5  # candidate must beat current GO win% by >= 0.5 pts to change code
+  on_adopt: "set ALERT bonus in decision.verdict; register effect in decisions.md"
+  on_no_adopt: "keep +15; register"
+
+# Archive factors test (PRE-REGISTERED 2026-07-04, BEFORE run) — two candidate
+# conditioning factors computed from the owned ORATS archive (per-name, EOD, nearest
+# 3 expiries — same slice as the GEX study), on the same ORATS-window setup sample.
+# One-sided hypotheses fixed from theory BEFORE running:
+archive_factors:
+  primary_horizon_days: 10
+  # F1 positioning alignment: UP setups with call-tilted OI (below within-direction
+  # median P/C-OI) + DOWN setups with put-tilted OI (above median) = "aligned".
+  f1_win_gap_pts_min: 5.0            # aligned minus opposed
+  f1_bootstrap_p_max: 0.05
+  # F2 IV-rank: ATM-IV expanding percentile within the cached window (>=60 prior
+  # days required). LOW (<=50th pctile) beats HIGH — cheap-vol compression thesis.
+  f2_win_gap_pts_min: 5.0            # low-IVrank minus high-IVrank
+  f2_bootstrap_p_max: 0.05
+  on_pass: "factor becomes a candidate verdict input (wire-up needs its own user OK)"
+  on_fail: "register; do not wire"
+
+# LIVE FORWARD TEST (PRE-REGISTERED 2026-07-04, BEFORE first snapshot) — from Monday
+# 2026-07-06: nightly prediction ledger (every daily EW setup's verdict recorded) +
+# one system-picked GO paper trade/day. Evaluated after 20 trading days (~Aug 3):
+live_forward_test:
+  eval_after_trading_days: 20
+  horizons_days: [3, 10]
+  pass_criteria:
+    go_win_rate_10d_min: 52.0          # GO bucket must clear a coin flip decisively
+    go_minus_avoid_win_gap_min: 5.0    # live rank-ordering must hold (backtest ~+10)
+    tape_support_beats_fight: true     # direction-adjusted support > fight win%
+    ops_critical_failures_max: 0       # missed exits / unreconciled fills / stale-data trades
+  on_pass: "continue; consider next size step per go-live plan Phase F"
+  on_fail: "halt system_pick placements; investigate divergence before resuming"
+  notes: "predictions graded on close-to-close fwd returns from the 1d cache;
+    system_pick trades are execution-realism evidence, not the primary statistic"

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.squeeze.backup</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/you/projects/squeeze-raf-engine/scripts/backup_ledger.sh</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/you/projects/squeeze-raf-engine</string>
+  <key>StartInterval</key><integer>3600</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>/Users/you/projects/squeeze-raf-engine/logs/backup.out</string>
+  <key>StandardErrorPath</key><string>/Users/you/projects/squeeze-raf-engine/logs/backup.err</string>
+</dict>
+</plist>

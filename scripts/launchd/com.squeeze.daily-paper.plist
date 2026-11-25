@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.squeeze.daily-paper</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/you/projects/squeeze-raf-engine/scripts/daily_paper.sh</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/you/projects/squeeze-raf-engine</string>
+  <!-- 13:35 PT == 16:35 ET year-round (both zones shift DST together) -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>13</integer><key>Minute</key><integer>35</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>13</integer><key>Minute</key><integer>35</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>13</integer><key>Minute</key><integer>35</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>13</integer><key>Minute</key><integer>35</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>13</integer><key>Minute</key><integer>35</integer></dict>
+  </array>
+  <key>StandardOutPath</key><string>/Users/you/projects/squeeze-raf-engine/logs/launchd_daily.out</string>
+  <key>StandardErrorPath</key><string>/Users/you/projects/squeeze-raf-engine/logs/launchd_daily.err</string>
+</dict>
+</plist>

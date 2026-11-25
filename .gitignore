@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Data cache & outputs — never commit raw market/options data or the live ledgers.
+# NOTE: data/ also holds SOURCE (.py) — ignore only the artifacts, not the package.
+data/cache/
+data/orats/
+data/*.jsonl
+data/earnings_dates.json
+data/news_sentiment.json
+*.parquet
+*.csv
+!config/*.csv
+tearsheets/
+*.png
+
+# Frontend build artifacts
+node_modules/
+.next/
+tsconfig.tsbuildinfo
+
+# Secrets — API keys for Polygon / Alpha Vantage / ORATS / Tradier
+.env
+.env.*
+secrets.*
+*.key
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+logs/

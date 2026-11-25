@@ -1,0 +1,47 @@
+{
+  "2h": {
+    "confluence_window": 4,
+    "sc_ready": 1,
+    "energy_lookback": 6,
+    "atr_stop_mult": 2.5,
+    "profit_target_R": 2.0,
+    "time_stop_bars": 6,
+    "use_momentum_exit": 1,
+    "use_profit_target": 0,
+    "research_sharpe": 1.8781283466914502,
+    "wfa_efficiency": 0.7158213443306053,
+    "mean_test_sharpe": 1.547237583111089,
+    "n_trades": 2053,
+    "knife_edge_suspect": false
+  },
+  "4h": {
+    "confluence_window": 8,
+    "sc_ready": 2,
+    "energy_lookback": 10,
+    "atr_stop_mult": 3.5,
+    "profit_target_R": 2.5,
+    "time_stop_bars": 10,
+    "use_momentum_exit": 1,
+    "use_profit_target": 1,
+    "research_sharpe": 0.6131152469960767,
+    "wfa_efficiency": -0.27568954429203557,
+    "mean_test_sharpe": -0.3235709717338262,
+    "n_trades": 644,
+    "knife_edge_suspect": false
+  },
+  "1d": {
+    "confluence_window": 6,
+    "sc_ready": 1,
+    "energy_lookback": 4,
+    "atr_stop_mult": 2.5,
+    "profit_target_R": 1.5,
+    "time_stop_bars": 9,
+    "use_momentum_exit": 0,
+    "use_profit_target": 0,
+    "research_sharpe": 0.44934916647353046,
+    "wfa_efficiency": -0.20108867719745102,
+    "mean_test_sharpe": -0.1895795698151858,
+    "n_trades": 456,
+    "knife_edge_suspect": false
+  }
+}

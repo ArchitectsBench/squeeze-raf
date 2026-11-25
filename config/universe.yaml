@@ -1,0 +1,119 @@
+# config/universe.yaml
+# Universe, costs, timeframe→DTE mapping, and spread-structuring parameters.
+# Detail: docs/BUILD_SPEC.md §4, §6, §8.
+
+universe:
+  # Phase-1 pilot: liquid, weekly-optionable names + high-vol ETFs. Validate on this first.
+  pilot:
+    equities: [AAPL, MSFT, NVDA, AMD, META, TSLA, AMZN, GOOGL]
+    etfs_liquid: [SPY, QQQ, IWM]
+    etfs_high_vol: [TQQQ, SQQQ, SOXL, SOXS, UVXY]   # leveraged/vol — decay & split aware (R9)
+  # Broad pilot (P3 power boost): sector-diversified liquid large caps so entries
+  # are more INDEPENDENT (cross-sector names don't co-move like the tech cluster),
+  # raising the effective sample for the edge-check. SURVIVORSHIP CAVEAT (R2/D6):
+  # this is today's liquid set, not point-in-time — logged, acceptable for the
+  # power test; the full run still requires point-in-time constituents.
+  broad:
+    equities: [
+      AAPL, MSFT, NVDA, AMD, META, AMZN, GOOGL, TSLA,
+      AVGO, ORCL, CRM, ADBE, QCOM, CSCO, INTC,
+      JPM, BAC, GS, MS, V, MA, AXP,
+      UNH, JNJ, LLY, PFE, ABBV, MRK,
+      WMT, HD, MCD, NKE, COST, PG, KO, PEP, DIS,
+      XOM, CVX, CAT, BA, GE, HON,
+      NFLX, T, VZ,
+    ]
+    etfs_liquid: [SPY, QQQ, IWM]
+    etfs_high_vol: [TQQQ, SQQQ, SOXL, SOXS, UVXY]
+  # Pairs pool (P-pairs): liquid large caps grouped by sector. Candidate pairs are
+  # formed WITHIN each sector (economically sensible, bounds the multiple-testing),
+  # then cointegration-screened on a training window and traded out-of-sample.
+  pairs_pool:
+    semis: [NVDA, AMD, AVGO, QCOM, INTC, TXN, MU, AMAT, LRCX]
+    software: [MSFT, ORCL, CRM, ADBE, NOW, INTU, PANW]
+    megacap_tech: [AAPL, GOOGL, META, AMZN]
+    banks: [JPM, BAC, WFC, C, GS, MS, USB, PNC]
+    payments: [V, MA, AXP, COF, PYPL]
+    pharma: [JNJ, PFE, MRK, ABBV, LLY, BMY, AMGN, GILD]
+    health_svc: [UNH, CI, HUM, CVS, ELV]
+    energy: [XOM, CVX, COP, SLB, EOG, PSX, MPC, OXY]
+    staples: [PG, KO, PEP, CL, KMB, MDLZ]
+    retail: [WMT, COST, HD, LOW, TGT]
+    industrials: [CAT, HON, GE, BA, DE, UNP, MMM, ETN]
+    telecom_media: [T, VZ, TMUS, DIS, NFLX, CMCSA]
+    discretionary: [NKE, MCD, SBUX]
+
+  # Full run: point-in-time SPX-500 constituents (D6) + curated high-vol ETF set.
+  full:
+    sp500_source: "point_in_time"        # or "current_with_caveat" — must be logged (R2)
+    high_vol_etfs: [TQQQ, SQQQ, SOXL, SOXS, SPXL, SPXS, LABU, LABD, TNA, TZA, UVXY, VXX]
+  liquidity_filter:                       # curate by option liquidity (R5)
+    min_open_interest: 500
+    max_bid_ask_spread_pct: 0.10
+
+timeframes:
+  signal_bars: ["2h", "4h", "1d"]
+  alignment_bonus_pairs: [["4h", "1d"]]   # raise conviction when these agree
+
+# Holding-horizon bucket → target DTE band for the recommended spread (D2, §4)
+holding_to_dte:
+  "1d": [0, 2]
+  "2d": [2, 5]
+  "3d": [5, 10]
+  "5d": [7, 21]
+
+costs:
+  equities:
+    commission_per_share: 0.0
+    slippage_bps: 2                       # conservative; half-spread on top
+  etfs_high_vol:
+    commission_per_share: 0.0
+    slippage_bps: 4                       # wider for leveraged/vol products
+  options:
+    per_contract: 0.65
+    slippage_per_leg: 0.02                # used in P8 options backtest
+
+# Debit vs credit (D4, §6) — driven by IV regime, not the price signal
+iv_regime:
+  iv_rank_lookback_days: 252
+  low_iv_rank_below: 30                   # → favor DEBIT spreads
+  high_iv_rank_above: 50                  # → favor CREDIT spreads
+
+strikes:
+  debit:
+    long_leg_delta: [0.45, 0.55]          # near-ATM
+    short_leg_delta: [0.25, 0.30]
+  credit:
+    short_leg_delta: [0.25, 0.35]
+    long_leg_one_strike_wider: true
+    target_credit_pct_of_width: [0.33, 0.50]
+  expected_move:
+    iv_formula: "price * iv * sqrt(dte/365)"
+    atr_cross_check: "ATR(14) * sqrt(horizon_bars)"
+
+# Confluence v0 default params (Stage-1 edge-check uses these BEFORE optimization, §3)
+strategy_defaults:
+  squeeze:
+    length_intraday: 13
+    length_daily: 21
+    bb_mult: 2.0
+    kc_mult_high: 1.0
+    kc_mult_mid: 1.5
+    kc_mult_low: 2.0
+    energy_lookback_bars: 6               # squeeze state >=1 within last N bars
+    ema_ribbon: [8, 13, 21]
+  raf:
+    pro_length: 28
+    overbought_oversold: 1.2
+    stoch_fast: [5, 3]
+    stoch_med: [8, 5]
+    stoch_slow: [17, 5]
+    require_aim: true                     # SC magnitude >= 2 for a full Fire
+  exits:
+    time_stop_bars: "horizon_dependent"
+    atr_stop_mult: 1.5
+    profit_target_R: 1.5
+  confluence_mode: "A"                    # A/B/C tested head-to-head in P3 (D11)
+  sizing:
+    method: "vol_target"
+    risk_per_trade_pct: 0.5

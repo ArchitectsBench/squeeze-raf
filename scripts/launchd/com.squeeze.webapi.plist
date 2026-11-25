@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.squeeze.webapi</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/you/projects/squeeze-raf-engine/.venv/bin/uvicorn</string>
+    <string>webapp.api.main:app</string>
+    <string>--host</string><string>127.0.0.1</string>
+    <string>--port</string><string>8000</string>
+    <string>--timeout-keep-alive</string><string>30</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/you/projects/squeeze-raf-engine</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>15</integer>
+  <key>StandardOutPath</key><string>/Users/you/projects/squeeze-raf-engine/logs/uvicorn.out</string>
+  <key>StandardErrorPath</key><string>/Users/you/projects/squeeze-raf-engine/logs/uvicorn.err</string>
+</dict>
+</plist>

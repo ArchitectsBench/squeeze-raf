@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.squeeze.bracketguard</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/you/projects/squeeze-raf-engine/.venv/bin/python</string>
+    <string>-m</string>
+    <string>reporting.bracket_guard</string>
+    <string>--place</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/you/projects/squeeze-raf-engine</string>
+  <!-- 06:45 PT == 09:45 ET, right after next-open entries fill -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>45</integer></dict>
+  </array>
+  <key>StandardOutPath</key><string>/Users/you/projects/squeeze-raf-engine/logs/bracketguard.out</string>
+  <key>StandardErrorPath</key><string>/Users/you/projects/squeeze-raf-engine/logs/bracketguard.err</string>
+</dict>
+</plist>

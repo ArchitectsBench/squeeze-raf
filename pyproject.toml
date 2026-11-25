@@ -1,0 +1,60 @@
+[project]
+name = "squeeze-raf-engine"
+version = "0.1.0"
+description = "Confluence Squeeze + RAF -> options-spread recommendation engine"
+requires-python = ">=3.12,<3.13"   # vectorbt OSS can be sensitive to very new Python/numpy
+
+dependencies = [
+  "pandas>=2.1",
+  "numpy>=1.26,<2.0",   # pin <2.0 for vectorbt/numba compatibility; bump only after testing
+  "numba>=0.59",
+  "scipy>=1.11",
+  "vectorbt>=0.26",     # OSS research engine. If dep resolution fights you, see NOTE below.
+  "optuna>=3.6",
+  "pyarrow>=15.0",
+  "pydantic>=2.6",
+  "pyyaml>=6.0",
+  "httpx>=0.27",
+  "matplotlib>=3.8",
+  "fastapi>=0.138.1",
+  "uvicorn[standard]>=0.49.0",
+]
+
+[project.optional-dependencies]
+# Overfit-math layer, only needed at P5 (validation/). pypbo is NOT on PyPI, so
+# keeping it out of the core `dependencies` is what lets `uv sync` resolve.
+# At P5, either add pypbo here as a git dependency
+#   (e.g. "pypbo @ git+https://github.com/esvhd/pypbo")
+# or implement CSCV + Deflated Sharpe directly in validation/ (preferred — small,
+# well-specified, and CLAUDE.md rule 5 needs it provably correct).
+validation = []
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.4",
+]
+
+[tool.uv]
+# This is a flat multi-package research repo (data/, indicators/, signals/, ...),
+# not a distributable library. Don't try to build it as a wheel — just manage the
+# environment. Modules are imported from the repo root (pytest runs from here).
+package = false
+
+# NOTE on the backtest engine:
+#   vectorbt (open source) is fast but can be finicky with newer numpy/numba. If `uv sync`
+#   fights you: (a) keep numpy<2.0 as above, or (b) move to VectorBT PRO (maintained), or
+#   (c) fall back to `backtesting.py` for a simpler engine. Decide in P4, log in decisions.md.
+# After a clean resolve: `uv lock` and COMMIT uv.lock so the build is reproducible.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
