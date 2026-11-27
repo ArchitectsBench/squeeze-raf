@@ -23,6 +23,8 @@ This is a research tool. Trading in it is paper only, and nothing here is financ
 - `config/gates.yaml` / `config/universe.yaml` — pre-registered thresholds and universe/costs.
 
 ## Setup
+Requires Python 3.12 (`pyproject.toml` pins `>=3.12,<3.13`) and [uv](https://docs.astral.sh/uv/).
+
 ```
 uv sync
 uv run pytest          # look-ahead + fidelity tests must be green before trusting any result
@@ -53,7 +55,7 @@ In total: 131 Python files and about 13,900 lines of Python.
 
 This is a public export of a private working repository, taken at one point in time.
 
-- **Commit history is not included.** The export is a single commit.
+- **Commit history is not included.** This copy starts from a single export commit; later commits are changes made to the export itself.
 - **No market data is included.** The adapters need your own vendor keys.
 - **One internal audit document is left out** because it contains account-level results.
 - **Machine paths** in scripts and the `launchd` job definitions are replaced with `/Users/you`.
